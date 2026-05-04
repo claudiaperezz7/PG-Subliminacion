@@ -1,7 +1,6 @@
 // =============================================
 //  CONFIGURACIÓN
 //  Reemplazá con tu número real (código país sin +)
-//  Ejemplo Argentina: 549 + tu número sin el 0 inicial
 // =============================================
 const WA_NUMBER = '56950182756';
 
@@ -17,7 +16,7 @@ let qty = 1;
 document.querySelectorAll('.product-card').forEach(card => {
   card.addEventListener('click', () => {
     const prod  = card.dataset.product;
-    const emoji = card.dataset.emoji;
+    const img = card.querySelector('img')?.src;
 
     if (selected.find(s => s.name === prod)) {
       // Ya estaba seleccionado → lo quitamos
@@ -25,7 +24,7 @@ document.querySelectorAll('.product-card').forEach(card => {
       card.classList.remove('selected');
     } else {
       // No estaba → lo agregamos
-      selected.push({ name: prod, emoji });
+      selected.push({ name: prod, img });
       card.classList.add('selected');
     }
 
@@ -52,7 +51,10 @@ function renderTags() {
   selected.forEach(s => {
     const tag = document.createElement('div');
     tag.className = 'tag';
-    tag.innerHTML = `${s.emoji} ${s.name} <button onclick="removeTag('${s.name}')">✕</button>`;
+    tag.innerHTML = `${s.img ? `<img src="${s.img}" class="tag-img">` : ''}
+      ${s.name}
+  <button onclick="removeTag('${s.name}')">✕</button>
+`;
     display.appendChild(tag);
   });
 }
@@ -76,14 +78,38 @@ function removeTag(name) {
 //  SELECTOR DE CANTIDAD
 // =============================================
 document.getElementById('qty-plus').addEventListener('click', () => {
-  qty = Math.min(qty + 1, 99);
+  const limite = getLimiteActual();
+  if (qty >= limite) {
+    mostrarLimiteMsg(limite);
+    return;
+  }
+  qty = Math.min(qty + 1, limite);
   document.getElementById('qty-val').textContent = qty;
+  document.getElementById('limite-msg').textContent = '';
 });
 
 document.getElementById('qty-minus').addEventListener('click', () => {
   qty = Math.max(qty - 1, 1);
   document.getElementById('qty-val').textContent = qty;
+  document.getElementById('limite-msg').textContent = '';
 });
+
+function getLimiteActual() {
+  // Si hay UN solo producto seleccionado, usa su data-max
+  // Si hay varios o ninguno, usa 99 como límite genérico
+  if (selected.length === 1) {
+    const card = document.querySelector(
+      `.product-card[data-product="${selected[0].name}"]`
+    );
+    return card ? parseInt(card.dataset.max) || 99 : 99;
+  }
+  return 99;
+}
+
+function mostrarLimiteMsg(limite) {
+  document.getElementById('limite-msg').textContent =
+    `⚠️ Máximo disponible: ${limite} unidades. ¡Consultanos para más!`;
+}
 
 // =============================================
 //  ENVIAR PEDIDO POR WHATSAPP
